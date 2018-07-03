@@ -20,7 +20,7 @@ provider "aws" {
 data "aws_availability_zones" "available" {}
 
 resource "aws_vpc" "main" {
-  cidr_block = "172.17.0.0.16"
+  cidr_block = "172.17.0.0/16"
 }
 
 # Create var.az_count private subnets, each in a different AZ
@@ -175,22 +175,22 @@ resource "aws_ecs_task_definition" "app" {
   memory                   = "${var.fargate_memory}"
 
   container_definitions = <<DEFINITION
-  [
-    {
-      "cpu": "${var.fargate_cpu}",
-      "image": "${var.app_image}",
-      "memory": "${var.fargate_memory}",
-      "name": "app",
-      "networkMode": "awsvpc",
-      "portMappings": [
-        {
-          "containerPort": "${var.app_port}",
-          "hostPort": "${var.app_port}"
-        }
-      ]
-    }
-  ]
-  DEFINITION
+[
+  {
+    "cpu": ${var.fargate_cpu},
+    "image": "${var.app_image}",
+    "memory": ${var.fargate_memory},
+    "name": "app",
+    "networkMode": "awsvpc",
+    "portMappings": [
+      {
+        "containerPort": ${var.app_port},
+        "hostPort": ${var.app_port}
+      }
+    ]
+  }
+]
+DEFINITION
 }
 
 resource "aws_ecs_service" "main" {
