@@ -1,0 +1,1 @@
+### Terraform script for deploying docker containers to ECS using Fargate launch type. Currently using for Crystal Blockchain app.
