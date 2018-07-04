@@ -1,10 +1,6 @@
 variable "aws_region" {
   description = "The AWS region things are created in"
-  default     = "us-east-2"
-}
-
-variable "aws_account_id" {
-  description = "AWS account ID"
+  default     = "us-west-2"
 }
 
 variable "az_count" {
