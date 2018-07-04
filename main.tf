@@ -163,7 +163,7 @@ resource "aws_ecs_cluster" "main" {
 
 resource "aws_ecs_task_definition" "app" {
   family                   = "app"
-  execution_role_arn       = "arn:aws:iam::309154556741:role/ecsTaskExecutionRole"
+  execution_role_arn       = "${var.ecs_task_execution_role}"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "${var.fargate_cpu}"
@@ -233,7 +233,7 @@ resource "aws_appautoscaling_target" "target" {
   service_namespace  = "ecs"
   resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.main.name}"
   scalable_dimension = "ecs:service:DesiredCount"
-  role_arn           = "arn:aws:iam::309154556741:role/ecsAutoscaleRole"
+  role_arn           = "${var.ecs_autoscale_role}"
   min_capacity       = 3
   max_capacity       = 6
 }

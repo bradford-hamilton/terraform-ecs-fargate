@@ -23,6 +23,16 @@ variable "app_count" {
   default     = 3
 }
 
+variable "ecs_autoscale_role" {
+  description = "Role arn for the ecsAutocaleRole"
+  default     = "arn:aws:iam::309154556741:role/ecsAutoscaleRoles"
+}
+
+variable "ecs_task_execution_role" {
+  description = "Role arn for the ecsTaskExecutionRole"
+  default     = "arn:aws:iam::309154556741:role/ecsTaskExecutionRole"
+}
+
 variable "fargate_cpu" {
   description = "Fargate instance CPU units to provision (1 vCPU = 1024 CPU units)"
   default     = "1024"
