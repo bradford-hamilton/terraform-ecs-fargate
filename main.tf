@@ -83,7 +83,7 @@ resource "aws_route_table_association" "private" {
 
 # ALB Security Group: Edit this to restrict access to the application
 resource "aws_security_group" "lb" {
-  name        = "tf-cb-alb"
+  name        = "cb-alb"
   description = "controls access to the ALB"
   vpc_id      = "${aws_vpc.main.id}"
 
@@ -104,7 +104,7 @@ resource "aws_security_group" "lb" {
 
 # Traffic to the ECS cluster should only come from the ALB
 resource "aws_security_group" "ecs_tasks" {
-  name        = "tf-cb-security-group"
+  name        = "cb-security-group"
   description = "allow inbound access from the ALB only"
   vpc_id      = "${aws_vpc.main.id}"
 
@@ -128,13 +128,13 @@ resource "aws_security_group" "ecs_tasks" {
 #############################
 
 resource "aws_alb" "main" {
-  name            = "tf-cb-alb"
+  name            = "cb-alb"
   subnets         = ["${aws_subnet.public.*.id}"]
   security_groups = ["${aws_security_group.lb.id}"]
 }
 
 resource "aws_alb_target_group" "app" {
-  name        = "tf-cb-target-group"
+  name        = "cb-target-group"
   port        = 80
   protocol    = "HTTP"
   vpc_id      = "${aws_vpc.main.id}"
@@ -158,11 +158,12 @@ resource "aws_alb_listener" "front_end" {
 #############################
 
 resource "aws_ecs_cluster" "main" {
-  name = "tf-cb-cluster"
+  name = "cb-cluster"
 }
 
 resource "aws_ecs_task_definition" "app" {
   family                   = "app"
+  task_role_arn            = "arn:aws:iam::309154556741:role/ecsTaskExecutionRole"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "${var.fargate_cpu}"
@@ -188,7 +189,7 @@ DEFINITION
 }
 
 resource "aws_ecs_service" "main" {
-  name            = "tf-cb-service"
+  name            = "cb-service"
   cluster         = "${aws_ecs_cluster.main.id}"
   task_definition = "${aws_ecs_task_definition.app.arn}"
   desired_count   = "${var.app_count}"
@@ -208,4 +209,17 @@ resource "aws_ecs_service" "main" {
   depends_on = [
     "aws_alb_listener.front_end",
   ]
+}
+
+#############################
+############ LOGS ############
+#############################
+
+resource "aws_cloudwatch_log_group" "myapp" {
+  name              = "/ecs/cb-app"
+  retention_in_days = 30
+
+  tags {
+    Name = "cb-app"
+  }
 }
