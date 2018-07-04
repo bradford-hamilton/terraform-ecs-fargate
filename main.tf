@@ -163,7 +163,7 @@ resource "aws_ecs_cluster" "main" {
 
 resource "aws_ecs_task_definition" "app" {
   family                   = "app"
-  task_role_arn            = "arn:aws:iam::309154556741:role/ecsTaskExecutionRole"
+  execution_role_arn       = "arn:aws:iam::309154556741:role/ecsTaskExecutionRole"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "${var.fargate_cpu}"
@@ -196,8 +196,9 @@ resource "aws_ecs_service" "main" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    security_groups = ["${aws_security_group.ecs_tasks.id}"]
-    subnets         = ["${aws_subnet.private.*.id}"]
+    security_groups  = ["${aws_security_group.ecs_tasks.id}"]
+    subnets          = ["${aws_subnet.private.*.id}"]
+    assign_public_ip = true
   }
 
   load_balancer {
