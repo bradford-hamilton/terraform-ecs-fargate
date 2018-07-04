@@ -1,15 +1,9 @@
 # Specify the provider and access details
 
-# Use vault to get credentials, could use variables to acheive the same thing
-data "vault_generic_secret" "aws_creds" {
-  path = "aws/sts/manage-${var.aws_account_id}"
-}
-
 provider "aws" {
-  access_key = "${data.vault_generic_secret.aws_creds.data["access_key"]}"
-  secret_key = "${data.vault_generic_secret.aws_creds.data["secret_key"]}"
-  token      = "${data.vault_generic_secret.aws_creds.data["security_token"]}"
-  region     = "${var.aws_region}"
+  shared_credentials_file = "$HOME/.aws/credentials"
+  profile                 = "default"
+  region                  = "${var.aws_region}"
 }
 
 #################################
@@ -169,7 +163,7 @@ resource "aws_ecs_cluster" "main" {
 
 resource "aws_ecs_task_definition" "app" {
   family                   = "app"
-  network_mode             = "aws_vpc"
+  network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "${var.fargate_cpu}"
   memory                   = "${var.fargate_memory}"
