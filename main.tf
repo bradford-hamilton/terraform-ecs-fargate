@@ -83,14 +83,14 @@ resource "aws_route_table_association" "private" {
 
 # ALB Security Group: Edit this to restrict access to the application
 resource "aws_security_group" "lb" {
-  name        = "cb-alb"
+  name        = "cb-load-balancer-security-group"
   description = "controls access to the ALB"
   vpc_id      = "${aws_vpc.main.id}"
 
   ingress {
     protocol    = "tcp"
-    from_port   = 80
-    to_port     = 80
+    from_port   = 3000
+    to_port     = 3000
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -104,7 +104,7 @@ resource "aws_security_group" "lb" {
 
 # Traffic to the ECS cluster should only come from the ALB
 resource "aws_security_group" "ecs_tasks" {
-  name        = "cb-security-group"
+  name        = "cb-ecs-tasks-security-group"
   description = "allow inbound access from the ALB only"
   vpc_id      = "${aws_vpc.main.id}"
 
@@ -128,7 +128,7 @@ resource "aws_security_group" "ecs_tasks" {
 #############################
 
 resource "aws_alb" "main" {
-  name            = "cb-alb"
+  name            = "cb-load-balancer"
   subnets         = ["${aws_subnet.public.*.id}"]
   security_groups = ["${aws_security_group.lb.id}"]
 }
@@ -212,9 +212,9 @@ resource "aws_ecs_service" "main" {
   ]
 }
 
-#############################
+##############################
 ############ LOGS ############
-#############################
+##############################
 
 resource "aws_cloudwatch_log_group" "app" {
   name              = "/ecs/app"
@@ -223,4 +223,77 @@ resource "aws_cloudwatch_log_group" "app" {
   tags {
     Name = "app"
   }
+}
+
+######################################
+############ AUTO-SCALING ############
+######################################
+
+resource "aws_appautoscaling_target" "target" {
+  service_namespace  = "ecs"
+  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.main.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  role_arn           = "arn:aws:iam::309154556741:role/ecsAutoscaleRole"
+  min_capacity       = 3
+  max_capacity       = 6
+}
+
+resource "aws_appautoscaling_policy" "up" {
+  name               = "cb_scale_up"
+  service_namespace  = "ecs"
+  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.main.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+
+  step_scaling_policy_configuration {
+    adjustment_type         = "ChangeInCapacity"
+    cooldown                = 60
+    metric_aggregation_type = "Maximum"
+
+    step_adjustment {
+      metric_interval_lower_bound = 0
+      scaling_adjustment          = 1
+    }
+  }
+
+  depends_on = ["aws_appautoscaling_target.target"]
+}
+
+resource "aws_appautoscaling_policy" "down" {
+  name               = "cb_scale_down"
+  service_namespace  = "ecs"
+  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.main.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+
+  step_scaling_policy_configuration {
+    adjustment_type         = "ChangeInCapacity"
+    cooldown                = 60
+    metric_aggregation_type = "Maximum"
+
+    step_adjustment {
+      metric_interval_lower_bound = 0
+      scaling_adjustment          = -1
+    }
+  }
+
+  depends_on = ["aws_appautoscaling_target.target"]
+}
+
+# metric used for auto scale
+resource "aws_cloudwatch_metric_alarm" "service_cpu_high" {
+  alarm_name          = "cb_cpu_utilization_high"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/ECS"
+  period              = "60"
+  statistic           = "Maximum"
+  threshold           = "85"
+
+  dimensions {
+    ClusterName = "${aws_ecs_cluster.main.name}"
+    ServiceName = "${aws_ecs_service.main.name}"
+  }
+
+  alarm_actions = ["${aws_appautoscaling_policy.up.arn}"]
+  ok_actions    = ["${aws_appautoscaling_policy.down.arn}"]
 }
