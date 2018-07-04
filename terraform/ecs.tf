@@ -2,31 +2,26 @@ resource "aws_ecs_cluster" "main" {
   name = "cb-cluster"
 }
 
+data "template_file" "cb_app" {
+  template = "${file("terraform/templates/ecs/cb_app.json.tpl")}"
+
+  vars {
+    app_image      = "${var.app_image}"
+    fargate_cpu    = "${var.fargate_cpu}"
+    fargate_memory = "${var.fargate_memory}"
+    aws_region     = "${var.aws_region}"
+    app_port       = "${var.app_port}"
+  }
+}
+
 resource "aws_ecs_task_definition" "app" {
-  family                   = "app"
+  family                   = "cb-app-task"
   execution_role_arn       = "${var.ecs_task_execution_role}"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "${var.fargate_cpu}"
   memory                   = "${var.fargate_memory}"
-
-  container_definitions = <<DEFINITION
-[
-  {
-    "cpu": ${var.fargate_cpu},
-    "image": "${var.app_image}",
-    "memory": ${var.fargate_memory},
-    "name": "app",
-    "networkMode": "awsvpc",
-    "portMappings": [
-      {
-        "containerPort": ${var.app_port},
-        "hostPort": ${var.app_port}
-      }
-    ]
-  }
-]
-DEFINITION
+  container_definitions    = "${data.template_file.cb_app.rendered}"
 }
 
 resource "aws_ecs_service" "main" {
@@ -44,7 +39,7 @@ resource "aws_ecs_service" "main" {
 
   load_balancer {
     target_group_arn = "${aws_alb_target_group.app.id}"
-    container_name   = "app"
+    container_name   = "cb-app"
     container_port   = "${var.app_port}"
   }
 
