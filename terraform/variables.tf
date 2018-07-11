@@ -33,6 +33,10 @@ variable "ecs_task_execution_role" {
   default     = "arn:aws:iam::309154556741:role/ecsTaskExecutionRole"
 }
 
+variable "health_check_path" {
+  default = "/"
+}
+
 variable "fargate_cpu" {
   description = "Fargate instance CPU units to provision (1 vCPU = 1024 CPU units)"
   default     = "1024"
