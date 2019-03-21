@@ -13,7 +13,7 @@ resource "aws_subnet" "private" {
   vpc_id            = "${aws_vpc.main.id}"
 }
 
-# Create car.az_count public subnets, each in a different AZ
+# Create var.az_count public subnets, each in a different AZ
 resource "aws_subnet" "public" {
   count                   = "${var.az_count}"
   cidr_block              = "${cidrsubnet(aws_vpc.main.cidr_block, 8, var.az_count + count.index)}"
