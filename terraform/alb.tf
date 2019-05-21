@@ -27,7 +27,7 @@ resource "aws_alb_target_group" "app" {
 # Redirect all traffic from the ALB to the target group
 resource "aws_alb_listener" "front_end" {
   load_balancer_arn = "${aws_alb.main.id}"
-  port              = "3000"
+  port              = "${var.app_port}"
   protocol          = "HTTP"
 
   default_action {
