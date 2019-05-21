@@ -1,3 +1,5 @@
+# network.tf
+
 # Fetch AZs in the current region
 data "aws_availability_zones" "available" {}
 
@@ -13,7 +15,7 @@ resource "aws_subnet" "private" {
   vpc_id            = "${aws_vpc.main.id}"
 }
 
-# Create car.az_count public subnets, each in a different AZ
+# Create var.az_count public subnets, each in a different AZ
 resource "aws_subnet" "public" {
   count                   = "${var.az_count}"
   cidr_block              = "${cidrsubnet(aws_vpc.main.cidr_block, 8, var.az_count + count.index)}"
@@ -22,19 +24,19 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 }
 
-# IGW for the public subnet
+# Internet Gateway for the public subnet
 resource "aws_internet_gateway" "gw" {
   vpc_id = "${aws_vpc.main.id}"
 }
 
-# Route the public subnet trafic through the IGW
+# Route the public subnet traffic through the IGW
 resource "aws_route" "internet_access" {
   route_table_id         = "${aws_vpc.main.main_route_table_id}"
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = "${aws_internet_gateway.gw.id}"
 }
 
-# Create a NAT gateway with an EIP for each private subnet to get internet connectivity
+# Create a NAT gateway with an Elastic IP for each private subnet to get internet connectivity
 resource "aws_eip" "gw" {
   count      = "${var.az_count}"
   vpc        = true

@@ -1,3 +1,5 @@
+# variables.tf
+
 variable "aws_region" {
   description = "The AWS region things are created in"
   default     = "us-west-2"
@@ -24,7 +26,7 @@ variable "app_count" {
 }
 
 variable "ecs_autoscale_role" {
-  description = "Role arn for the ecsAutocaleRole"
+  description = "Role arn for the ecsAutoscaleRole"
   default     = "arn:aws:iam::309154556741:role/ecsAutoscaleRoles"
 }
 
