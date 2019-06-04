@@ -7,7 +7,7 @@ resource "aws_ecs_cluster" "main" {
 data "template_file" "cb_app" {
   template = "${file("terraform/templates/ecs/cb_app.json.tpl")}"
 
-  vars {
+  vars = {
     app_image      = "${var.app_image}"
     app_port       = "${var.app_port}"
     fargate_cpu    = "${var.fargate_cpu}"
