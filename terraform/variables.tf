@@ -5,13 +5,13 @@ variable "aws_region" {
   default     = "us-west-2"
 }
 
-variable "ecsTaskExecutionRoleName" {
-  description = "ECS Task execution Role name"
+variable "ecs_task_execution_role_name" {
+  description = "ECS task execution role name"
   default = "myEcsTaskExecutionRole"
 }
 
-variable "ecsAutoScaleRoleName" {
-  description = "ECS Auto Scale Role Name"
+variable "ecs_auto_scale_role_name" {
+  description = "ECS auto scale role Name"
   default = "myEcsAutoScaleRole"
 }
 
