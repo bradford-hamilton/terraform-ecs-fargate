@@ -5,6 +5,16 @@ variable "aws_region" {
   default     = "us-west-2"
 }
 
+variable "ecsTaskExecutionRoleName" {
+  description = "ECS Task execution Role name"
+  default = "myEcsTaskExecutionRole"
+}
+
+variable "ecsAutoScaleRoleName" {
+  description = "ECS Auto Scale Role Name"
+  default = "myEcsAutoScaleRole"
+}
+
 variable "az_count" {
   description = "Number of AZs to cover in a given region"
   default     = "2"
@@ -23,16 +33,6 @@ variable "app_port" {
 variable "app_count" {
   description = "Number of docker containers to run"
   default     = 3
-}
-
-variable "ecs_autoscale_role" {
-  description = "Role arn for the ecsAutoscaleRole"
-  default     = "arn:aws:iam::309154556741:role/ecsAutoscaleRoles"
-}
-
-variable "ecs_task_execution_role" {
-  description = "Role arn for the ecsTaskExecutionRole"
-  default     = "arn:aws:iam::309154556741:role/ecsTaskExecutionRole"
 }
 
 variable "health_check_path" {
