@@ -10,11 +10,6 @@ variable "ecs_task_execution_role_name" {
   default = "myEcsTaskExecutionRole"
 }
 
-variable "ecs_auto_scale_role_name" {
-  description = "ECS auto scale role Name"
-  default = "myEcsAutoScaleRole"
-}
-
 variable "az_count" {
   description = "Number of AZs to cover in a given region"
   default     = "2"
