@@ -2,7 +2,7 @@
 
 variable "aws_region" {
   description = "The AWS region things are created in"
-  default     = "us-west-2"
+  default     = "eu-central-1"
 }
 
 variable "ecs_task_execution_role_name" {
@@ -17,7 +17,7 @@ variable "az_count" {
 
 variable "app_image" {
   description = "Docker image to run in the ECS cluster"
-  default     = "bradfordhamilton/crystal_blockchain:latest"
+  default     = "bharathexad/sun-api:latest"
 }
 
 variable "app_port" {
