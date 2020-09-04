@@ -1,7 +1,7 @@
 [
   {
     "family":"tutorial-task-def",
-    "name": "app",
+    "name": "service-bluegreen",
     "image": "${app_image}",
     "cpu": ${fargate_cpu},
     "memory": ${fargate_memory},

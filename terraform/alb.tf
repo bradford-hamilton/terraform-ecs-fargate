@@ -45,7 +45,7 @@ resource "aws_alb_target_group" "bluegreentarget2" {
 
 # Redirect all traffic from the ALB to the target group
 resource "aws_alb_listener" "front_end" {
-  load_balancer_arn = aws_alb.bluegreen-alb.id
+  load_balancer_arn = aws_alb.bluegreen-alb.arn
   port = var.app_port
   protocol = "HTTP"
 
@@ -83,7 +83,7 @@ resource "aws_ecs_task_definition" "app" {
   container_definitions = data.template_file.cb_app.rendered
 }
 
-resource "aws_ecs_service" "main" {
+resource "aws_ecs_service" "service-bluegreen" {
   name = "service-bluegreen"
   cluster = "tutorial-bluegreen-cluster"
   task_definition = aws_ecs_task_definition.app.arn
@@ -103,55 +103,34 @@ resource "aws_ecs_service" "main" {
 
   load_balancer {
     target_group_arn = aws_alb_target_group.bluegreentarget1.id
-    container_name = "cb-app"
+    container_name = "service-bluegreen"
     container_port = var.app_port
   }
 
-  //  depends_on = [aws_alb_listener.front_end, aws_iam_role_policy_attachment.ecs_task_execution_role]
+    depends_on = [aws_alb_listener.front_end, aws_iam_role_policy_attachment.ecs_task_execution_role]
 }
 
-resource "aws_iam_role" "example" {
-  name = "example-role"
-
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "1",
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "codedeploy.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    },
-    {
-      "Sid": "2",
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "ecs.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
-}
-EOF
-}
-
-resource "aws_iam_role_policy_attachment" "AWSCodeDeployRole" {
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
-  role = aws_iam_role.example.name
-}
 
 resource "aws_codedeploy_app" "tutorial-bluegreen-app" {
   name = "tutorial-bluegreen-app"
   compute_platform = "ECS"
 }
 
+resource "aws_sns_topic" "example" {
+  name = "example-topic"
+}
+
+
 resource "aws_codedeploy_deployment_group" "tutorial-bluegreen-dg" {
 
   app_name = "tutorial-bluegreen-app"
   deployment_group_name = "tutorial-bluegreen-dg"
+
+  trigger_configuration {
+    trigger_events     = ["DeploymentFailure"]
+    trigger_name       = "example-trigger"
+    trigger_target_arn = aws_sns_topic.example.arn
+  }
 
   auto_rollback_configuration {
     enabled = true
@@ -160,12 +139,15 @@ resource "aws_codedeploy_deployment_group" "tutorial-bluegreen-dg" {
   }
   blue_green_deployment_config {
     deployment_ready_option {
-      action_on_timeout = "CONTINUE_DEPLOYMENT"
-      wait_time_in_minutes = 0
+      action_on_timeout = "STOP_DEPLOYMENT"
+      wait_time_in_minutes = 1
     }
     terminate_blue_instances_on_deployment_success {
       action = "TERMINATE"
-      termination_wait_time_in_minutes = 5
+      termination_wait_time_in_minutes = 3
+    }
+    green_fleet_provisioning_option {
+      action = "DISCOVER_EXISTING"
     }
   }
   deployment_style {
@@ -173,10 +155,11 @@ resource "aws_codedeploy_deployment_group" "tutorial-bluegreen-dg" {
     deployment_type = "BLUE_GREEN"
   }
   load_balancer_info {
+
     target_group_pair_info {
-      target_group {
-        name = "bluegreentarget1"
-      }
+//      target_group {
+//        name = "bluegreentarget1"
+//      }
       target_group {
         name = "bluegreentarget2"
       }
@@ -186,10 +169,10 @@ resource "aws_codedeploy_deployment_group" "tutorial-bluegreen-dg" {
 
     }
   }
-  service_role_arn = aws_iam_role.example.arn
+  service_role_arn = "arn:aws:iam::967474675298:role/CodeDeploy"
   ecs_service {
-    cluster_name = "service-bluegreen"
-    service_name = "tutorial-bluegreen-cluster"
+    service_name = aws_ecs_service.service-bluegreen.name
+    cluster_name = aws_ecs_cluster.main.name
   }
 }
 
