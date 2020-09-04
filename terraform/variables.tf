@@ -44,3 +44,7 @@ variable "fargate_memory" {
   default     = "2048"
 }
 
+//variable "test_traffic_route_listener_arns" {
+//  default = []
+//  type        = "list"
+//}
