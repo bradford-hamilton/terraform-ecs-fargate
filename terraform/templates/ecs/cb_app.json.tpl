@@ -1,6 +1,7 @@
 [
   {
-    "name": "cb-app",
+    "family":"tutorial-task-def",
+    "name": "service-bluegreen",
     "image": "${app_image}",
     "cpu": ${fargate_cpu},
     "memory": ${fargate_memory},
