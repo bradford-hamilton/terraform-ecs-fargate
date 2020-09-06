@@ -1,0 +1,1 @@
+{"applicationName":"tutorial-bluegreen-app","deploymentGroupName":"tutorial-bluegreen-dg","revision":{"revisionType":"S3","s3Location":{"bucket":"blue-green-ecs-deployment-bucket","key":"appsec.yaml","bundleType":"YAML"}}}

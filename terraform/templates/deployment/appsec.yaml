@@ -1,0 +1,9 @@
+version: 0.0
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: "arn:aws:ecs:eu-central-1:967474675298:task-definition/tutorial-task-def:10"
+        LoadBalancerInfo:
+          ContainerName: "service-bluegreen"
+          ContainerPort: 3000

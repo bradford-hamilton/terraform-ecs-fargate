@@ -103,12 +103,14 @@ resource "aws_ecs_service" "main" {
   desired_count = 1
   launch_type = "FARGATE"
   scheduling_strategy = "REPLICA"
+
+  lifecycle {
+    ignore_changes = [desired_count]
+  }
+
   deployment_controller {
-//    type = "ECS"
     type = "CODE_DEPLOY"
   }
-//  force_new_deployment = true
-//  platform_version = "LATEST"
 
   network_configuration {
     security_groups = [aws_security_group.ecs_tasks.id]
@@ -122,30 +124,29 @@ resource "aws_ecs_service" "main" {
     container_port = var.app_port
   }
 
-
-//    depends_on = [aws_alb_listener.front_end, aws_iam_role_policy_attachment.ecs_task_execution_role]
 }
 
-//module "codedeploy" {
-//  source                     = "git::https://github.com/tmknom/terraform-aws-codedeploy-ecs.git?ref=tags/1.0.0"
-//  name                       = "example"
-//  ecs_cluster_name           = aws_ecs_cluster.main.name
-//  ecs_service_name           = aws_ecs_service.service-bluegreen.name
-//  lb_listener_arns           = [aws_alb_listener.front_end.arn]
-//  blue_lb_target_group_name  = aws_alb_target_group.bluegreentarget1.name
-//  green_lb_target_group_name = aws_alb_target_group.bluegreentarget2.name
-//}
 
-//
 resource "aws_codedeploy_app" "tutorial-bluegreen-app" {
   name = "tutorial-bluegreen-app"
   compute_platform = "ECS"
-
 }
 
-resource "aws_sns_topic" "example" {
-  name = "example-topic"
+resource "aws_sns_topic" "deployment-start" {
+  name = "deployment-start"
 }
+
+resource "aws_sns_topic" "deployment-success" {
+  name = "deployment-success"
+}
+
+resource "aws_sns_topic" "deployment-failure" {
+  name = "deployment-failure"
+}
+
+
+
+
 
 
 
@@ -154,30 +155,37 @@ resource "aws_codedeploy_deployment_group" "tutorial-bluegreen-dg" {
   app_name = aws_codedeploy_app.tutorial-bluegreen-app.name
   deployment_group_name = "tutorial-bluegreen-dg"
   deployment_config_name = "CodeDeployDefault.ECSAllAtOnce"
+
   trigger_configuration {
-    trigger_events     = ["DeploymentFailure","DeploymentSuccess"]
-    trigger_name       = "example-trigger"
-    trigger_target_arn = aws_sns_topic.example.arn
+    trigger_events     = ["DeploymentStart"]
+    trigger_name       = "deployment-start-trigger"
+    trigger_target_arn = aws_sns_topic.deployment-start.arn
+  }
+
+  trigger_configuration {
+    trigger_events     = ["DeploymentSuccess"]
+    trigger_name       = "deployment-success-trigger"
+    trigger_target_arn = aws_sns_topic.deployment-success.arn
+  }
+
+  trigger_configuration {
+    trigger_events     = ["DeploymentFailure"]
+    trigger_name       = "deployment-failure-trigger"
+    trigger_target_arn = aws_sns_topic.deployment-failure.arn
   }
 
   auto_rollback_configuration {
     enabled = true
-    events = [
-      "DEPLOYMENT_FAILURE"]
+    events = ["DEPLOYMENT_FAILURE"]
   }
+
   blue_green_deployment_config {
     deployment_ready_option {
-
-      action_on_timeout = "STOP_DEPLOYMENT"
-      wait_time_in_minutes = 5
+      action_on_timeout = "CONTINUE_DEPLOYMENT"
     }
     terminate_blue_instances_on_deployment_success {
       action = "TERMINATE"
-      termination_wait_time_in_minutes = 5
     }
-//    green_fleet_provisioning_option {
-//      action = "DISCOVER_EXISTING"
-//    }
   }
   deployment_style {
     deployment_option = "WITH_TRAFFIC_CONTROL"
@@ -209,4 +217,30 @@ resource "aws_codedeploy_deployment_group" "tutorial-bluegreen-dg" {
   }
 }
 
+resource "aws_s3_bucket" "deployment_definition_bucket" {
+  bucket = "blue-green-ecs-deployment-bucket"
+}
 
+resource "aws_s3_bucket_object" "depolyment_definition" {
+  bucket = aws_s3_bucket.deployment_definition_bucket.id
+  key = "appsec.yaml"
+  source = "/Users/bharatmehta/self/terraform-ecs-fargate/terraform/templates/deployment/appsec.yaml"
+}
+//data "template_file" "deployment_revision" {
+//  template = file("./templates/deployment/deployment.json.tpl")
+//  vars = {
+//    app_name = aws_codedeploy_deployment_group.tutorial-bluegreen-dg.app_name
+//    deployment_group_name = aws_codedeploy_deployment_group.tutorial-bluegreen-dg.deployment_group_name
+//  }
+//}
+//
+//
+//resource null_resource "trigger_code_deployment" {
+//  provisioner "local-exec" {
+////   command = "aws deploy create-deployment --profile tfuser --cli-input-json '${data.template_file.deployment_revision.rendered}' --region eu-central-1"
+//   command = "  aws deploy create-deployment --cli-input-json file:///Users/bharatmehta/self/terraform-ecs-fargate/terraform/templates/deployment/deployment.json"
+//  }
+//  depends_on = [aws_codedeploy_app.tutorial-bluegreen-app,
+//    aws_codedeploy_deployment_group.tutorial-bluegreen-dg,
+//    aws_ecs_service.main]
+//}
