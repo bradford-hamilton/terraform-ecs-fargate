@@ -2,7 +2,12 @@
 
 variable "aws_region" {
   description = "The AWS region things are created in"
-  default     = "us-west-2"
+  default     = "us-east-1"
+}
+
+variable "cidr_subnet" {
+  description = "cidr subnet for the project"
+  default = "172.17.0.0/16"
 }
 
 variable "ecs_task_execution_role_name" {
