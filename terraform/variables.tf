@@ -5,6 +5,11 @@ variable "aws_region" {
   default     = "us-west-2"
 }
 
+variable "cidr_subnet" {
+  description = "cidr subnet for the project"
+  default = "172.17.0.0/16"
+}
+
 variable "ecs_task_execution_role_name" {
   description = "ECS task execution role name"
   default = "myEcsTaskExecutionRole"
